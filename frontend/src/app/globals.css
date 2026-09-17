@@ -1,0 +1,203 @@
+@import "tailwindcss";
+
+:root {
+  /* ---- Deep Emerald & Obsidian Theme ---- */
+  --background: #0b1411;
+  --surface: #121f1a;
+  --surface-muted: #0e1915;
+  --surface-2: #192b23;
+  --surface-3: #223a2f;
+  --border: #233b30;
+  --border-strong: #325243;
+
+  --foreground: #f4f7f4;
+  --foreground-secondary: #a8bba9;
+  --foreground-tertiary: #758a77;
+
+  --ink: #0b1411;
+  --paper: #f8faf6;
+
+  --primary: #2fb979;
+  --primary-light: #4bd897;
+  --primary-dark: #1b8754;
+  --on-primary: #0b1411;
+
+  --accent: #e5b03e;
+  --accent-light: #f5c862;
+  --accent-dark: #ba8a24;
+  --on-accent: var(--ink);
+
+  --success: #3abf72;
+  --on-success: var(--paper);
+
+  --shadow-soft: 0 4px 14px rgba(0, 0, 0, 0.35), 0 10px 28px -10px rgba(0, 0, 0, 0.6);
+  --shadow-lifted: 0 12px 28px rgba(0, 0, 0, 0.45), 0 32px 64px -16px rgba(0, 0, 0, 0.7);
+  --glow-primary: 0 0 0 1px rgba(47, 185, 121, 0.35), 0 12px 36px -8px rgba(47, 185, 121, 0.45);
+  --glow-accent: 0 0 0 1px rgba(229, 176, 62, 0.35), 0 12px 36px -8px rgba(229, 176, 62, 0.45);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --background: #f8f7f2;
+    --surface: #ffffff;
+    --surface-muted: #f0f3ed;
+    --surface-2: #e6eae0;
+    --surface-3: #dadfd3;
+    --border: #dce2d6;
+    --border-strong: #c2cbba;
+
+    --foreground: #122119;
+    --foreground-secondary: #425549;
+    --foreground-tertiary: #6b7e71;
+
+    --ink: #122119;
+    --paper: #fafaf6;
+
+    --primary: #194d36;
+    --primary-light: #296e4f;
+    --primary-dark: #103625;
+    --on-primary: var(--paper);
+
+    --accent: #cb9225;
+    --accent-light: #e4aa3b;
+    --accent-dark: #a17215;
+    --on-accent: var(--paper);
+
+    --shadow-soft: 0 2px 8px rgba(18, 33, 25, 0.06), 0 12px 28px -10px rgba(18, 33, 25, 0.12);
+    --shadow-lifted: 0 8px 24px rgba(18, 33, 25, 0.1), 0 32px 56px -16px rgba(18, 33, 25, 0.18);
+    --glow-primary: 0 0 0 1px rgba(25, 77, 54, 0.2), 0 12px 32px -8px rgba(25, 77, 54, 0.25);
+    --glow-accent: 0 0 0 1px rgba(203, 146, 37, 0.22), 0 12px 32px -8px rgba(203, 146, 37, 0.3);
+  }
+}
+
+:root[data-theme="light"] {
+  --background: #f8f7f2;
+  --surface: #ffffff;
+  --surface-muted: #f0f3ed;
+  --surface-2: #e6eae0;
+  --surface-3: #dadfd3;
+  --border: #dce2d6;
+  --border-strong: #c2cbba;
+
+  --foreground: #122119;
+  --foreground-secondary: #425549;
+  --foreground-tertiary: #6b7e71;
+
+  --primary: #194d36;
+  --primary-light: #296e4f;
+  --primary-dark: #103625;
+  --on-primary: var(--paper);
+
+  --accent: #cb9225;
+  --accent-light: #e4aa3b;
+  --accent-dark: #a17215;
+  --on-accent: var(--paper);
+}
+
+:root[data-theme="dark"] {
+  --background: #0b1411;
+  --surface: #121f1a;
+  --surface-muted: #0e1915;
+  --surface-2: #192b23;
+  --surface-3: #223a2f;
+  --border: #233b30;
+  --border-strong: #325243;
+
+  --foreground: #f4f7f4;
+  --foreground-secondary: #a8bba9;
+  --foreground-tertiary: #758a77;
+
+  --primary: #2fb979;
+  --primary-light: #4bd897;
+  --primary-dark: #1b8754;
+  --on-primary: #0b1411;
+
+  --accent: #e5b03e;
+  --accent-light: #f5c862;
+  --accent-dark: #ba8a24;
+  --on-accent: var(--ink);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-foreground-secondary: var(--foreground-secondary);
+  --color-foreground-tertiary: var(--foreground-tertiary);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
+  --color-on-primary: var(--on-primary);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-accent-dark: var(--accent-dark);
+  --color-on-accent: var(--on-accent);
+
+  --shadow-soft: var(--shadow-soft);
+  --shadow-lifted: var(--shadow-lifted);
+  --shadow-glow-primary: var(--glow-primary);
+  --shadow-glow-accent: var(--glow-accent);
+
+  --font-heading: var(--font-playfair);
+  --font-sans: var(--font-sans);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-heading), Georgia, serif;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+.text-gradient-emerald {
+  background: linear-gradient(135deg, #4bd897 0%, #2fb979 50%, #e5b03e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, #f5c862 0%, #e5b03e 50%, #ba8a24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.glass-panel {
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--border);
+}
+
+.bg-glow-hero {
+  background:
+    radial-gradient(70% 60% at 20% 0%, color-mix(in srgb, var(--primary) 25%, transparent), transparent 75%),
+    radial-gradient(60% 50% at 85% 90%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 75%),
+    var(--background);
+}
+
+.img-overlay-dark {
+  position: relative;
+}
+.img-overlay-dark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(11,20,17,0.2) 0%, rgba(11,20,17,0.85) 100%);
+}
