@@ -22,7 +22,7 @@ if not SECRET_KEY:
         SECRET_KEY = "django-insecure-dev-only"
     else:
         raise ImproperlyConfigured("SECRET_KEY must be set in production")
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "jpureva-eta.vercel.app"])
 
 INSTALLED_APPS = [
     "django.contrib.admin",

@@ -71,3 +71,5 @@ Thumbs.db
 scratch_*.txt
 
 docx_text.txt
+.vercel
+.env*
