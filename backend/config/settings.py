@@ -6,14 +6,22 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env()
 environ.Env.read_env(BASE_DIR / ".env")
 
-SECRET_KEY = env("SECRET_KEY", default="django-insecure-dev-only")
-DEBUG = env.bool("DEBUG", default=True)
+DEBUG = env.bool("DEBUG", default=False)
+
+SECRET_KEY = env("SECRET_KEY", default="")
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = "django-insecure-dev-only"
+    else:
+        raise ImproperlyConfigured("SECRET_KEY must be set in production")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
 INSTALLED_APPS = [
@@ -74,25 +82,33 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 # Database
-DB_BACKEND = env("DJANGO_DB_BACKEND", default="postgres")
-if DB_BACKEND == "postgres":
+import dj_database_url
+
+DATABASE_URL = env("DATABASE_URL", default=None)
+if DATABASE_URL:
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": env("DB_NAME", default="jpureva_db"),
-            "USER": env("DB_USER", default="jpureva_user"),
-            "PASSWORD": env("DB_PASSWORD", default=""),
-            "HOST": env("DB_HOST", default="127.0.0.1"),
-            "PORT": env("DB_PORT", default="5432"),
-        }
+        "default": dj_database_url.parse(DATABASE_URL)
     }
 else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+    DB_BACKEND = env("DJANGO_DB_BACKEND", default="postgres")
+    if DB_BACKEND == "postgres":
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": env("DB_NAME", default="jpureva_db"),
+                "USER": env("DB_USER", default="jpureva_user"),
+                "PASSWORD": env("DB_PASSWORD", default=""),
+                "HOST": env("DB_HOST", default="127.0.0.1"),
+                "PORT": env("DB_PORT", default="5432"),
+            }
         }
-    }
+    else:
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": BASE_DIR / "db.sqlite3",
+            }
+        }
 
 AUTH_USER_MODEL = "accounts.User"
 
@@ -144,5 +160,10 @@ CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS", default=["http://localhost:3000"]
 )
 CORS_ALLOW_CREDENTIALS = True
+
+# CSRF
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS", default=["http://localhost:3000"]
+)
 
 FRONTEND_BASE_URL = env("FRONTEND_BASE_URL", default="http://localhost:3000")
