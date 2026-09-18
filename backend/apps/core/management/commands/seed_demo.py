@@ -1,13 +1,14 @@
 from django.core.management.base import BaseCommand
-from datetime import date
+from datetime import date, timedelta
 
-from apps.accounts.models import HotelProfile, LabProfile, SupplierProfile, User
+from apps.accounts.models import HotelProfile, LabProfile, SupplierProfile, User, WarehouseProfile
 from apps.catalog.models import Category, Ingredient
 from apps.hotels.models import SubscriptionPlan
 from apps.labs.models import TestType, VerificationRequest, Certificate
 from apps.suppliers.models import Batch
 from apps.traceability.models import ColdChainLog
 from apps.notifications.models import Notification
+from apps.warehouse.models import WarehouseInventory, WarehouseStockMovement
 from django.db import transaction
 from django.utils import timezone
 
@@ -20,7 +21,9 @@ class Command(BaseCommand):
         self._seed_test_types()
         self._seed_subscription_plans()
         self._seed_demo_users()
+        self._seed_warehouse_users()
         self._seed_demo_batch()
+        self._seed_warehouse_inventory()
         self.stdout.write(self.style.SUCCESS("Demo data seeded."))
 
     def _seed_catalog(self):
@@ -101,6 +104,33 @@ class Command(BaseCommand):
             )
             HotelProfile.objects.create(user=u, business_name="The Jaipur Palace", city="Jaipur")
 
+    def _seed_warehouse_users(self):
+        if not User.objects.filter(email="warehouse1@jpureva.com").exists():
+            u = User.objects.create_user(
+                username="warehouse1@jpureva.com", email="warehouse1@jpureva.com",
+                password="demopass123", role=User.Role.WAREHOUSE,
+                approval_status=User.ApprovalStatus.APPROVED,
+            )
+            WarehouseProfile.objects.create(
+                user=u, warehouse_name="Jaipur Central Warehouse", warehouse_code="JAIPUR-WH-01",
+                address="123 Industrial Area", city="Jaipur", state="Rajasthan",
+                contact_person="Ramesh Kumar", contact_phone="9876543210",
+                storage_type="Cold Storage", is_active=True,
+            )
+
+        if not User.objects.filter(email="warehouse2@jpureva.com").exists():
+            u = User.objects.create_user(
+                username="warehouse2@jpureva.com", email="warehouse2@jpureva.com",
+                password="demopass123", role=User.Role.WAREHOUSE,
+                approval_status=User.ApprovalStatus.APPROVED,
+            )
+            WarehouseProfile.objects.create(
+                user=u, warehouse_name="Jaipur West Warehouse", warehouse_code="JAIPUR-WH-02",
+                address="456 Logistics Park", city="Jaipur", state="Rajasthan",
+                contact_person="Sita Devi", contact_phone="8765432109",
+                storage_type="Dry Storage", is_active=True,
+            )
+
     def _seed_demo_batch(self):
         # Create a batch for the supplier (Amber Dairy FPO, Jaipur) with Paneer
         # Only create if no such batch exists (idempotent)
@@ -159,11 +189,142 @@ class Command(BaseCommand):
             # Optionally, we could also create a cold chain log to show some data
             ColdChainLog.objects.create(
                 batch=batch,
+                stage=ColdChainLog.Stage.WAREHOUSE,
+                location_name='Cold Room A',
+                temperature_c=4.5,
+                humidity_pct=65.0,
                 recorded_by=supplier_user,
-                temperature_min=4.0,
-                temperature_max=8.0,
-                humidity_min=60,
-                humidity_max=80,
+                recorded_at=timezone.now(),
             )
         else:
             self.stdout.write("Demo batch already exists, skipping.")
+
+    def _seed_warehouse_inventory(self):
+        # Get warehouse profiles
+        warehouse1 = WarehouseProfile.objects.get(warehouse_code="JAIPUR-WH-01")
+        warehouse2 = WarehouseProfile.objects.get(warehouse_code="JAIPUR-WH-02")
+
+        # Get the verified batch of Paneer from supplier
+        paneer_batch = Batch.objects.get(ingredient__name="Paneer", status=Batch.Status.VERIFIED)
+
+        # Create inventory for warehouse1
+        # We'll receive the full quantity
+        inventory1, created = WarehouseInventory.objects.get_or_create(
+            warehouse=warehouse1,
+            batch=paneer_batch,
+            defaults={
+                'received_quantity': paneer_batch.quantity,
+                'available_quantity': paneer_batch.quantity,
+                'unit': paneer_batch.unit,
+                'storage_location': 'Cold Room A',
+                'storage_bin': 'Shelf 1',
+                'inventory_status': WarehouseInventory.InventoryStatus.AVAILABLE,
+            }
+        )
+        if not created:
+            # Update if needed
+            inventory1.received_quantity = paneer_batch.quantity
+            inventory1.available_quantity = paneer_batch.quantity
+            inventory1.save()
+
+        # Create additional batches for other ingredients
+        # We'll create a few more batches and mark them as VERIFIED
+        # We'll also create inventory for them in warehouse1 and warehouse2
+
+        # Get ingredients
+        tomato = Ingredient.objects.get(name="Tomato")
+        turmeric = Ingredient.objects.get(name="Turmeric")
+        chicken = Ingredient.objects.get(name="Chicken")
+
+        # Create batches
+        batches_data = [
+            (tomato, 100.0, "kg", date(2026, 8, 5), date(2026, 8, 20)),
+            (turmeric, 50.0, "kg", date(2026, 7, 1), date(2026, 7, 30)),
+            (chicken, 30.0, "kg", date(2026, 8, 1), date(2026, 8, 10)),
+        ]
+
+        for ingredient, quantity, unit, sowing_date, harvest_date in batches_data:
+            batch, created = Batch.objects.get_or_create(
+                ingredient=ingredient,
+                supplier=paneer_batch.supplier,  # use same supplier for simplicity
+                defaults={
+                    'quantity': quantity,
+                    'unit': unit,
+                    'sowing_date': sowing_date,
+                    'harvest_date': harvest_date,
+                    'status': Batch.Status.VERIFIED,
+                }
+            )
+            if not created:
+                # Update status to VERIFIED if not already
+                batch.status = Batch.Status.VERIFIED
+                batch.save(update_fields=['status'])
+            # Create inventory for warehouse1
+            inv1, _ = WarehouseInventory.objects.get_or_create(
+                warehouse=warehouse1,
+                batch=batch,
+                defaults={
+                    'received_quantity': quantity,
+                    'available_quantity': quantity,
+                    'unit': unit,
+                    'storage_location': 'Cold Room A' if ingredient.name != 'Tomato' else 'Produce Rack A1',
+                    'storage_bin': 'Shelf 1',
+                    'inventory_status': WarehouseInventory.InventoryStatus.AVAILABLE,
+                }
+            )
+            # Create inventory for warehouse2 for some items
+            if ingredient.name in ['Tomato', 'Chicken']:
+                inv2, _ = WarehouseInventory.objects.get_or_create(
+                    warehouse=warehouse2,
+                    batch=batch,
+                    defaults={
+                        'received_quantity': quantity * 0.5,
+                        'available_quantity': quantity * 0.5,
+                        'unit': unit,
+                        'storage_location': 'Dry Storage',
+                        'storage_bin': 'Shelf 2',
+                        'inventory_status': WarehouseInventory.InventoryStatus.AVAILABLE,
+                    }
+                )
+
+        # Create some ColdChainLog records for warehouse inventory
+        # We'll add logs for the paneer batch in warehouse1
+        now = timezone.now()
+        ColdChainLog.objects.create(
+            batch=paneer_batch,
+            stage=ColdChainLog.Stage.WAREHOUSE,
+            location_name='Cold Room A',
+            temperature_c=4.5,
+            humidity_pct=65.0,
+            recorded_by=warehouse1.user,
+            recorded_at=now,
+        )
+        ColdChainLog.objects.create(
+            batch=paneer_batch,
+            stage=ColdChainLog.Stage.WAREHOUSE,
+            location_name='Cold Room A',
+            temperature_c=5.0,
+            humidity_pct=70.0,
+            recorded_by=warehouse1.user,
+            recorded_at=now + timedelta(minutes=5),
+        )
+        # Intentionally create an alert reading
+        ColdChainLog.objects.create(
+            batch=paneer_batch,
+            stage=ColdChainLog.Stage.WAREHOUSE,
+            location_name='Cold Room A',
+            temperature_c=9.0,  # above threshold
+            humidity_pct=85.0,
+            recorded_by=warehouse1.user,
+            recorded_at=now + timedelta(minutes=10),
+        )
+        # Then a normal reading
+        ColdChainLog.objects.create(
+            batch=paneer_batch,
+            stage=ColdChainLog.Stage.WAREHOUSE,
+            location_name='Cold Room A',
+            temperature_c=4.0,
+            humidity_pct=60.0,
+            recorded_by=warehouse1.user,
+            recorded_at=now + timedelta(minutes=15),
+        )

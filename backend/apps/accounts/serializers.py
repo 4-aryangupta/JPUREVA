@@ -3,10 +3,10 @@ from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import HotelProfile, LabProfile, SupplierProfile, User
+from .models import HotelProfile, LabProfile, SupplierProfile, WarehouseProfile, User
 
 # Allow all approved roles to log in (supplier/lab enabled for demo)
-LOGIN_ALLOWED_ROLES = (User.Role.HOTEL, User.Role.ADMIN, User.Role.SUPPLIER, User.Role.LAB)
+LOGIN_ALLOWED_ROLES = (User.Role.HOTEL, User.Role.ADMIN, User.Role.SUPPLIER, User.Role.LAB, User.Role.WAREHOUSE)
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -180,6 +180,60 @@ class RegisterHotelSerializer(serializers.ModelSerializer):
         }
 
 
+class RegisterWarehouseSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, min_length=8)
+    warehouse_name = serializers.CharField()
+    warehouse_code = serializers.CharField()
+    address = serializers.CharField()
+    city = serializers.CharField()
+    state = serializers.CharField()
+    contact_person = serializers.CharField()
+    contact_phone = serializers.CharField()
+    storage_type = serializers.CharField()
+
+    class Meta:
+        model = User
+        fields = [
+            "email", "password", "phone",
+            "warehouse_name", "warehouse_code", "address", "city", "state", "contact_person", "contact_phone", "storage_type",
+        ]
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("An account with this email already exists.")
+        return value
+
+    @transaction.atomic
+    def create(self, validated_data):
+        profile_fields = {
+            "warehouse_name": validated_data.pop("warehouse_name"),
+            "warehouse_code": validated_data.pop("warehouse_code"),
+            "address": validated_data.pop("address"),
+            "city": validated_data.pop("city"),
+            "state": validated_data.pop("state"),
+            "contact_person": validated_data.pop("contact_person"),
+            "contact_phone": validated_data.pop("contact_phone"),
+            "storage_type": validated_data.pop("storage_type"),
+        }
+        user = User.objects.create_user(
+            username=validated_data["email"],
+            email=validated_data["email"],
+            password=validated_data["password"],
+            phone=validated_data.get("phone", ""),
+            role=User.Role.WAREHOUSE,
+            approval_status=User.ApprovalStatus.PENDING,
+        )
+        WarehouseProfile.objects.create(user=user, **profile_fields)
+        return user
+
+    def to_representation(self, instance):
+        return {
+            "id": instance.id, "email": instance.email,
+            "role": instance.role, "approval_status": instance.approval_status,
+        }
+
+
 class SupplierProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupplierProfile
@@ -198,6 +252,12 @@ class HotelProfileSerializer(serializers.ModelSerializer):
         exclude = ["user"]
 
 
+class WarehouseProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WarehouseProfile
+        exclude = ["user"]
+
+
 class MeSerializer(serializers.ModelSerializer):
     profile = serializers.SerializerMethodField()
 
@@ -212,4 +272,6 @@ class MeSerializer(serializers.ModelSerializer):
             return LabProfileSerializer(obj.lab_profile).data
         if obj.role == User.Role.HOTEL and hasattr(obj, "hotel_profile"):
             return HotelProfileSerializer(obj.hotel_profile).data
+        if obj.role == User.Role.WAREHOUSE and hasattr(obj, "warehouse_profile"):
+            return WarehouseProfileSerializer(obj.warehouse_profile).data
         return None

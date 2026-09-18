@@ -27,6 +27,10 @@ class IsHotel(HasRole):
     role = "HOTEL"
 
 
+class IsWarehouse(HasRole):
+    role = "WAREHOUSE"
+
+
 class IsAdmin(HasRole):
     role = "ADMIN"
 
@@ -40,7 +44,7 @@ class IsApprovedRole(BasePermission):
             return False
         if request.method in SAFE_METHODS:
             return True
-        if user.role not in ("SUPPLIER", "LAB"):
+        if user.role not in ("SUPPLIER", "LAB", "WAREHOUSE"):
             return True
         return user.approval_status == "APPROVED"
 

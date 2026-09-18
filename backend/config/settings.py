@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "apps.traceability",
     "apps.hotels",
     "apps.orders",
+    "apps.warehouse",
     "apps.notifications",
     "apps.adminpanel",
 ]

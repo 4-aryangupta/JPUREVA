@@ -10,6 +10,7 @@ class User(AbstractUser):
         LAB = "LAB", "Lab"
         SUPPLIER = "SUPPLIER", "Supplier/FPO"
         ADMIN = "ADMIN", "Admin"
+        WAREHOUSE = "WAREHOUSE", "Warehouse"
 
     class ApprovalStatus(models.TextChoices):
         PENDING = "PENDING", "Pending"
@@ -78,3 +79,19 @@ class HotelProfile(TimeStampedModel):
 
     def __str__(self):
         return self.business_name
+
+
+class WarehouseProfile(TimeStampedModel):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="warehouse_profile")
+    warehouse_name = models.CharField(max_length=255)
+    warehouse_code = models.CharField(max_length=50, unique=True)
+    address = models.CharField(max_length=255)
+    city = models.CharField(max_length=100)
+    state = models.CharField(max_length=100)
+    contact_person = models.CharField(max_length=150)
+    contact_phone = models.CharField(max_length=20)
+    storage_type = models.CharField(max_length=100, help_text="e.g., Cold Storage, Dry Storage, etc.")
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.warehouse_name
