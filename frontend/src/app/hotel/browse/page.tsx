@@ -59,6 +59,22 @@ export default function HotelBrowsePage() {
     setQuantities((prev) => ({ ...prev, [batchId]: Math.min(Math.max(val, 1), max) }));
   };
 
+  const handleAdd = async (batch: Batch) => {
+    setAddingId(batch.id);
+    try {
+      const cart = await addToCart(batch.public_id, getQuantity(batch));
+      setCartCount(cart.items.length);
+      setJustAddedId(batch.id);
+      setTimeout(() => setJustAddedId((cur) => (cur === batch.id ? null : cur)), 2000);
+    } catch (error: any) {
+      console.error("Failed to add to cart:", error);
+      // Show user-visible error
+      alert(`Unable to add item to cart: ${error.message || 'Unknown error'}`);
+    } finally {
+      setAddingId(null);
+    }
+  };
+
   const filteredProducts = useMemo(() => {
     let list = [...products];
     if (searchQuery.trim()) {
@@ -75,17 +91,6 @@ export default function HotelBrowsePage() {
     return list;
   }, [products, searchQuery, sortBy]);
 
-  async function handleAdd(batch: Batch) {
-    setAddingId(batch.id);
-    try {
-      const cart = await addToCart(batch.id, getQuantity(batch));
-      setCartCount(cart.items.length);
-      setJustAddedId(batch.id);
-      setTimeout(() => setJustAddedId((cur) => (cur === batch.id ? null : cur)), 2000);
-    } finally {
-      setAddingId(null);
-    }
-  }
 
   return (
     <div className="space-y-8 pb-16">

@@ -51,6 +51,34 @@ class Order(TimeStampedModel):
         return f"Order {self.id} - {self.hotel.business_name} ({self.status})"
 
 
+class Payment(TimeStampedModel):
+    class Status(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        PROCESSING = "PROCESSING", "Processing"
+        COMPLETED = "COMPLETED", "Completed"
+        FAILED = "FAILED", "Failed"
+        REFUNDED = "REFUNDED", "Refunded"
+
+    class Method(models.TextChoices):
+        CREDIT_CARD = "CREDIT_CARD", "Credit Card"
+        DEBIT_CARD = "DEBIT_CARD", "Debit Card"
+        BANK_TRANSFER = "BANK_TRANSFER", "Bank Transfer"
+        UPI = "UPI", "UPI"
+        WALLET = "WALLET", "Digital Wallet"
+        CASH = "CASH", "Cash on Delivery"
+
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="payment")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    method = models.CharField(max_length=20, choices=Method.choices)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    gateway_response = models.JSONField(default=dict, blank=True)
+    failed_reason = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"Payment {self.id} for Order {self.order_id} ({self.status})"
+
+
 class OrderItem(TimeStampedModel):
     class FulfillmentStatus(models.TextChoices):
         PENDING = "PENDING", "Pending"

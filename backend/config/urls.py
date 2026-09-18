@@ -15,6 +15,7 @@ urlpatterns = [
     path("api/warehouse/", include("apps.warehouse.urls")),
     path("api/labs/", include("apps.labs.urls")),
     path("api/hotels/", include("apps.hotels.urls")),
+    path("api/orders/", include("apps.orders.urls")),
     path("api/notifications/", include("apps.notifications.urls")),
     path("api/public/", include("apps.traceability.public_urls")),
 ]
