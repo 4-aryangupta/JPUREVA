@@ -57,3 +57,34 @@ Deliberate MVP simplifications (see plan for rationale): certificate "digital si
 a SHA-256 integrity hash + signed stamp (not full PKI); cold-chain/IoT data is
 manually/API-logged, not ingested from real sensors; payouts are an internal ledger with no 
 live payment gateway; notifications are in-app only, no email/SMS delivery.
+
+## Containerized deployment
+
+The repository includes Dockerfiles for both services, a local Postgres Compose setup, and a
+Render Blueprint in `render.yaml`.
+
+### Local containers
+
+```bash
+docker compose up --build
+```
+
+The frontend is available at `http://localhost:3000` and the API health check is at
+`http://localhost:8000/api/health/`. Compose persists the database and uploaded media in named
+volumes.
+
+### Render
+
+1. In Render, choose **New > Blueprint** and select this repository.
+2. Apply `render.yaml`. It creates a Postgres database, a backend web service, and a frontend web service.
+3. Set `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`, and `FRONTEND_BASE_URL` to the final frontend URL if you use a custom domain.
+4. Set `ALLOWED_HOSTS` to the backend hostname and any custom backend domains.
+
+The backend container runs migrations and `collectstatic` before Gunicorn starts. Uploaded media is
+stored on the Render persistent disk mounted at `/app/media`. The frontend API URL is supplied as
+`NEXT_PUBLIC_API_BASE_URL` during its image build.
+
+### CI
+
+GitHub Actions in `.github/workflows/ci.yml` runs Django checks, migrations, backend tests, frontend
+lint, and the production Next.js build on pushes to `main` and pull requests.

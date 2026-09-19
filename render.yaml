@@ -1,0 +1,48 @@
+databases:
+  - name: jpureva-db
+    databaseName: jpureva_db
+    user: jpureva_user
+    plan: free
+
+services:
+  - type: web
+    name: jpureva-backend
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/health/
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "false"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: jpureva-db
+          property: connectionString
+      - key: ALLOWED_HOSTS
+        value: jpureva-backend.onrender.com
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://jpureva-frontend.onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://jpureva-frontend.onrender.com
+      - key: FRONTEND_BASE_URL
+        value: https://jpureva-frontend.onrender.com
+    disk:
+      name: jpureva-media
+      mountPath: /app/media
+      sizeGB: 1
+
+  - type: web
+    name: jpureva-frontend
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    healthCheckPath: /
+    envVars:
+      - key: NEXT_PUBLIC_API_BASE_URL
+        value: https://jpureva-backend.onrender.com/api
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"

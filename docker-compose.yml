@@ -1,0 +1,48 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: jpureva_db
+      POSTGRES_USER: jpureva_user
+      POSTGRES_PASSWORD: jpureva_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jpureva_user -d jpureva_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      DEBUG: "true"
+      SECRET_KEY: docker-development-only
+      DATABASE_URL: postgresql://jpureva_user:jpureva_password@db:5432/jpureva_db
+      ALLOWED_HOSTS: localhost,127.0.0.1,backend
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
+      CSRF_TRUSTED_ORIGINS: http://localhost:3000
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - backend_media:/app/media
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  backend_media:
